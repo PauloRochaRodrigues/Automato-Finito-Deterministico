@@ -337,7 +337,7 @@ function validaCadeia() {
     }
 
     console.log(estados_atuais)
-    criaADF(new Set(estados_atuais))
+    
 
     let val = false
 
@@ -354,51 +354,37 @@ function validaCadeia() {
     
 }
 
-function criaADF(estadosADF) {
+function criaADF() {
+    getInfoTable();
+    let quintupla_alfabeto = alfabeto;
+    let quintupla_inicial = estado_incial;
 
-    let inicialAFD = nomeiaSubconjunto([...estadosADF]);
-    let estadosAFD = [inicialAFD];
-    let pendentes = [inicialAFD];
+    //console.log(transicoes);
+    let quintupla_estados = [];
+    let transAFD = [];
 
-    let transAFD = {};  
+    transicoes.forEach(transicao => {
+        let aux = []
+        transicao[0].forEach(est => {
+            let trans = transicoes.filter((t) => (t[2] == est))
+            trans.forEach(t => {
+                console.log(`Estado: ${est} Transições: ${t}`)
+            })
+            
+            //aux.push(...trans)
+        })
 
-    while (pendentes.length > 0) {
-        let atual = pendentes.shift();
+        let bola = [transicao[0].join(""), ([...(new Set(aux))])]
+        console.log(bola)
 
-        let componentes = (atual === "∅") ? [] : atual.split("_");
-        transAFD[atual] = {};
+        quintupla_estados.push(transicao[0]);
+        
+        //console.log(transAFD);
+    })
 
-        alfabeto.forEach(simbolo => {
-            let destino = new Set();
+    //console.log(transAFD);
 
-            componentes.forEach(st => {
-                transicoes.forEach(t => {
-
-                    if (t[2] === st && t[1] === simbolo) {
-                        t[0].forEach(x => destino.add(x));
-                    }
-                });
-            });
-
-            let nomeDestino = nomeiaSubconjunto([...destino]);
-            transAFD[atual][simbolo] = nomeDestino;
-
-            if (nomeDestino !== "∅" && !estadosAFD.includes(nomeDestino)) {
-                estadosAFD.push(nomeDestino);
-                pendentes.push(nomeDestino);
-            }
-        });
-    }
-
-    quintupla_estados = estadosAFD;
-    quintupla_alfabeto = alfabeto;
-    quintupla_inicial = inicialAFD;
-    quintupla_finais = estadosAFD.filter(st =>
-        st.split("_").some(x => estados_finais.includes(x))
-    );
-
-    preencherTabelaAFD(estadosAFD, transAFD);
-    desenharAFD(estadosAFD, transAFD);
+    //preencherTabelaAFD(quintupla_estados, transAFD);
 }
 
 function preencherTabelaAFD(estadosAFD, transAFD) {
@@ -437,44 +423,6 @@ function preencherTabelaAFD(estadosAFD, transAFD) {
     });
 }
 
-function desenharAFD(estadosAFD, transAFD) {
-    const estados_backup = [...estados];
-    const estados_pos_backup = estados_pos.map(x => [...x]);
-    const transicoes_backup = transicoes.map(x => [Array.isArray(x[0])? [...x[0]] : x[0], x[1], x[2]]);
-    const finais_backup = [...estados_finais];
-
-    try {
-        estados = [...estadosAFD];
-        estados_pos = [];
-
-        const estados_finais_AFD = estadosAFD.filter(sub =>
-            sub.split("_").some(x => finais_backup.includes(x))
-        );
-        estados_finais = [...estados_finais_AFD];
-
-        desenhaEstados("tela_AFD");
-
-        transicoes = [];
-        estadosAFD.forEach(origem => {
-            alfabeto.forEach(simbolo => {
-                let destino = (transAFD[origem] && transAFD[origem][simbolo]) ? transAFD[origem][simbolo] : "∅";
-
-                if (!destino || destino === "∅") return;
-
-                let destinosArr = destino.split("_");
-                transicoes.push([destinosArr, simbolo, origem]);
-            });
-        });
-
-        desenhaTransicao("tela_AFD");
-    } finally {
-        estados = estados_backup;
-        estados_pos = estados_pos_backup;
-        transicoes = transicoes_backup;
-        estados_finais = finais_backup;
-    }
-}
-
 function getInfoTable() {
     const tabTransicao = document.getElementById("tabelaDelta");
     let linhaCabec = tabTransicao.rows[0];
@@ -505,6 +453,7 @@ function printaValidade() {
 }
 
 function transicao() {
+    
     var telaNAO = document.getElementById("tela_AFN");
     var telaDET = document.getElementById("tela_AFD");
 
@@ -516,16 +465,18 @@ function transicao() {
 
         document.getElementById("Botao").innerHTML = "Gerar AFD";
 
-        tabelaNAO.className = "tabelaAFN"
-        tabelaDET.className = "thidden"
+        tabelaNAO.className = "tabelaAFN";
+        tabelaDET.className = "thidden";
         
     } else if (telaDET.classList.contains("hidden")) {
+        criaADF();
+        
         telaDET.className = "canvasAFD";
         telaNAO.className = "hidden";
 
         document.getElementById("Botao").innerHTML = "Retornar AFN";
 
-        tabelaNAO.className = "thidden"
-        tabelaDET.className = "tabelaAFD"
+        tabelaNAO.className = "thidden";
+        tabelaDET.className = "tabelaAFD";
     }
 }

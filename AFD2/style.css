@@ -79,7 +79,6 @@ input, .incadeia{
     Tabela Delta*/
 
 .tabelaAFN, .tabelaAFD, .thidden{
-    transition-duration: 0.5s;
     border-radius: 25px;
     padding: 15px;
     width: 60%;
@@ -97,7 +96,7 @@ input, .incadeia{
 }
 
 .thidden {
-    display: none;
+    visibility: hidden;
 }
 
 table{
