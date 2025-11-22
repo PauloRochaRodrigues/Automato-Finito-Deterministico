@@ -14,6 +14,14 @@ canvas_spacing = 200
 
 estados_pos = []
 
+function nomeiaSubconjunto(arr) {
+    if (!arr || arr.length === 0) return "∅";
+    // filtra vazios (caso existam)
+    let itens = arr.filter(x => x !== "" && x !== undefined && x !== null);
+    if (itens.length === 0) return "∅";
+    return itens.sort().join("_");
+}
+
 function attTabelaFunc() {
     let thead = document.createElement("thead");
     let tbody = document.createElement("tbody");
@@ -329,12 +337,15 @@ function validaCadeia() {
     }
 
     console.log(estados_atuais)
-    criaADF(new Set(estados_afd))
+    criaADF(new Set(estados_atuais))
 
     let val = false
 
     estados_atuais.forEach(est => {
+        console.log(est)
+        console.log(estados_finais)
         if (estados_finais.includes(est)) {
+            console.log("Tem estado no final")
             val = true
         }
     })
@@ -344,10 +355,124 @@ function validaCadeia() {
 }
 
 function criaADF(estadosADF) {
-    quintupla_estados = [...estadosADF]
-    quintupla_alfabeto = alfabeto
-    quintupla_inicial = estado_incial
-    quintupla_finais = [[...estadosADF].filter((est) => estados_finais.includes(est))]
+
+    let inicialAFD = nomeiaSubconjunto([...estadosADF]);
+    let estadosAFD = [inicialAFD];
+    let pendentes = [inicialAFD];
+
+    let transAFD = {};  
+
+    while (pendentes.length > 0) {
+        let atual = pendentes.shift();
+
+        let componentes = (atual === "∅") ? [] : atual.split("_");
+        transAFD[atual] = {};
+
+        alfabeto.forEach(simbolo => {
+            let destino = new Set();
+
+            componentes.forEach(st => {
+                transicoes.forEach(t => {
+
+                    if (t[2] === st && t[1] === simbolo) {
+                        t[0].forEach(x => destino.add(x));
+                    }
+                });
+            });
+
+            let nomeDestino = nomeiaSubconjunto([...destino]);
+            transAFD[atual][simbolo] = nomeDestino;
+
+            if (nomeDestino !== "∅" && !estadosAFD.includes(nomeDestino)) {
+                estadosAFD.push(nomeDestino);
+                pendentes.push(nomeDestino);
+            }
+        });
+    }
+
+    quintupla_estados = estadosAFD;
+    quintupla_alfabeto = alfabeto;
+    quintupla_inicial = inicialAFD;
+    quintupla_finais = estadosAFD.filter(st =>
+        st.split("_").some(x => estados_finais.includes(x))
+    );
+
+    preencherTabelaAFD(estadosAFD, transAFD);
+    desenharAFD(estadosAFD, transAFD);
+}
+
+function preencherTabelaAFD(estadosAFD, transAFD) {
+    const tabela = document.querySelector("#tabelaAFD tbody");
+    const thead = document.querySelector("#tabelaAFD thead");
+
+    tabela.innerHTML = "";
+    thead.innerHTML = "";
+
+    const linhaCab = document.createElement("tr");
+
+    const thDelta = document.createElement("th");
+    thDelta.textContent = "δ";
+    thDelta.style.width = "2rem";
+    linhaCab.appendChild(thDelta);
+
+    alfabeto.forEach(simbolo => {
+        const th = document.createElement("th");
+        th.textContent = simbolo;
+        linhaCab.appendChild(th);
+    });
+
+    thead.appendChild(linhaCab);
+
+    estadosAFD.forEach(estado => {
+        const tr = tabela.insertRow();
+
+        const thEstado = document.createElement("th");
+        thEstado.textContent = estado;
+        tr.appendChild(thEstado);
+
+        alfabeto.forEach(simbolo => {
+            const td = tr.insertCell();
+            td.textContent = (transAFD[estado] && transAFD[estado][simbolo]) ? transAFD[estado][simbolo] : "∅";
+        });
+    });
+}
+
+function desenharAFD(estadosAFD, transAFD) {
+    const estados_backup = [...estados];
+    const estados_pos_backup = estados_pos.map(x => [...x]);
+    const transicoes_backup = transicoes.map(x => [Array.isArray(x[0])? [...x[0]] : x[0], x[1], x[2]]);
+    const finais_backup = [...estados_finais];
+
+    try {
+        estados = [...estadosAFD];
+        estados_pos = [];
+
+        const estados_finais_AFD = estadosAFD.filter(sub =>
+            sub.split("_").some(x => finais_backup.includes(x))
+        );
+        estados_finais = [...estados_finais_AFD];
+
+        desenhaEstados("tela_AFD");
+
+        transicoes = [];
+        estadosAFD.forEach(origem => {
+            alfabeto.forEach(simbolo => {
+                let destino = (transAFD[origem] && transAFD[origem][simbolo]) ? transAFD[origem][simbolo] : "∅";
+
+                if (!destino || destino === "∅") return;
+
+                let destinosArr = destino.split("_");
+                transicoes.push([destinosArr, simbolo, origem]);
+            });
+        });
+
+        desenhaTransicao("tela_AFD");
+    } finally {
+        estados = estados_backup;
+        estados_pos = estados_pos_backup;
+        transicoes = transicoes_backup;
+        estados_finais = finais_backup;
+    }
 }
 
 function getInfoTable() {
